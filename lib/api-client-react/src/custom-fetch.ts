@@ -337,6 +337,18 @@ export async function customFetch<T = unknown>(
 
   const headers = mergeHeaders(isRequest(input) ? input.headers : undefined, headersInit);
 
+  // Guest stories are isolated by a random browser-scoped ID until accounts
+  // are added. The ID is never a substitute for user authentication.
+  if (typeof window !== "undefined" && !headers.has("x-guest-id")) {
+    const storageKey = "mythos-guest-id";
+    let guestId = window.localStorage.getItem(storageKey);
+    if (!guestId) {
+      guestId = window.crypto.randomUUID();
+      window.localStorage.setItem(storageKey, guestId);
+    }
+    headers.set("x-guest-id", guestId);
+  }
+
   if (
     typeof init.body === "string" &&
     !headers.has("content-type") &&

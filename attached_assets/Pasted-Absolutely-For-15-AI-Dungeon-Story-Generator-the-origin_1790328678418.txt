@@ -1,0 +1,2297 @@
+Absolutely. For **#15 AI Dungeon Story Generator**, the original internship brief specifies a generative-AI application using **pretrained GPT-2/GPT-Neo**, prompt-based story generation, multiple continuations, story saving, genre selection, and Streamlit deployment. :chatgpt-content-reference{index="0"}
+
+Since you want something comparable to the Fitness Coach prompt, but for a **complete web application with a highly visual storytelling frontend**, use the following master prompt.
+
+# MASTER PROMPT — AI DUNGEON STORY GENERATOR WEB APPLICATION
+
+```text
+Build a complete production-quality web application called:
+
+"MYTHOS — AI Interactive Storyteller"
+
+The application is an AI-powered interactive storytelling platform where users create and play branching stories generated dynamically by a pretrained language model.
+
+This must be a REAL, FUNCTIONAL WEB APPLICATION — not merely a UI prototype.
+
+The application should feel like a polished interactive narrative product / game rather than a basic AI text generator.
+
+==================================================
+1. PROJECT OBJECTIVE
+==================================================
+
+Build an interactive AI Dungeon-style storytelling web application.
+
+The user should be able to:
+
+1. Create a character
+2. Select a story genre
+3. Select a world/theme
+4. Configure story preferences
+5. Start an adventure
+6. Read the generated story
+7. Make decisions
+8. Receive dynamically generated story continuations
+9. View multiple possible actions
+10. Maintain story continuity
+11. Track characters, inventory, quests and important events
+12. Save the story
+13. Resume previous stories
+14. Export completed stories
+15. Explore multiple endings
+
+The application should provide a sense of:
+
+- immersion
+- progression
+- choice
+- consequence
+- discovery
+- continuity
+
+IMPORTANT:
+
+Do NOT train a custom ML/DL model.
+
+Use a pretrained generative language model.
+
+The original project specification suggests GPT-2 / GPT-Neo with prompt-based generation, multiple continuations, genre selection and story saving. Preserve this core concept while expanding it into a complete web product. 
+```
+
+==================================================
+2. PLATFORM
+==================================================
+
+```text
+Build this as a responsive web application.
+
+It must work on:
+
+- Desktop
+- Laptop
+- Tablet
+- Mobile browser
+
+Preferred stack:
+
+Frontend:
+- Next.js
+- React
+- TypeScript
+
+Styling:
+- Tailwind CSS
+- CSS animations
+- Framer Motion
+
+Backend:
+- Python
+- FastAPI
+
+AI:
+- Hugging Face Transformers
+- GPT-2 / GPT-Neo or another suitable pretrained causal language model
+- The model must be used for inference only
+
+Database:
+- PostgreSQL
+or
+- SQLite for local development
+
+ORM:
+- SQLAlchemy / Prisma depending on architecture
+
+Authentication:
+- Optional initially
+- Support guest mode
+- Optional account system later
+
+State management:
+- Zustand
+
+Icons:
+- Lucide React
+
+Charts:
+- Lightweight chart library where required
+
+File export:
+- TXT
+- JSON
+- PDF optionally
+
+The application should remain usable without authentication in the first version.
+```
+
+==================================================
+3. PRODUCT EXPERIENCE
+==================================================
+
+```text
+The application should follow this flow:
+
+LANDING PAGE
+      ↓
+CREATE ADVENTURE
+      ↓
+CHARACTER CREATION
+      ↓
+WORLD / GENRE SELECTION
+      ↓
+STORY PREFERENCES
+      ↓
+GENERATE OPENING
+      ↓
+STORY READER
+      ↓
+USER MAKES CHOICE
+      ↓
+AI GENERATES CONSEQUENCE
+      ↓
+WORLD STATE UPDATES
+      ↓
+NEXT SCENE
+      ↓
+MORE CHOICES
+      ↓
+QUESTS / EVENTS / DISCOVERIES
+      ↓
+STORY CLIMAX
+      ↓
+ENDING
+      ↓
+STORY SUMMARY
+      ↓
+SAVE / EXPORT / REPLAY
+```
+
+Do not make this feel like:
+
+- ChatGPT clone
+- generic chatbot
+- plain text generator
+- admin dashboard
+- simple form-based Streamlit project
+
+The central experience must be an **interactive storybook/game**.
+```
+
+==================================================
+4. LANDING PAGE
+==================================================
+
+```text
+Create an immersive landing page.
+
+Hero heading:
+
+"Every choice creates a story."
+
+Subtitle:
+
+"Enter worlds that remember what you do."
+
+Primary CTA:
+
+"Start Your Adventure"
+
+Secondary CTA:
+
+"Continue Story"
+
+The hero should have:
+
+- animated background
+- fantasy/world artwork
+- atmospheric particles
+- subtle motion
+- floating story fragments
+- glowing interactive elements
+- cinematic transitions
+
+Create sections:
+
+FEATURES
+
+- Create your character
+- Explore dynamic worlds
+- Make meaningful choices
+- Discover hidden paths
+- Build your own ending
+
+GENRES
+
+- Fantasy
+- Mystery
+- Sci-Fi
+- Horror
+- Adventure
+- Historical
+- Post-Apocalyptic
+- Romance
+
+RECENT STORIES
+
+Show saved stories as visual cards.
+
+Do not make the page excessively cluttered.
+```
+
+==================================================
+5. STORY CREATION
+==================================================
+
+```text
+Create a multi-step story creation wizard.
+
+STEP 1 — Choose Genre
+
+Cards:
+
+Fantasy
+Mystery
+Sci-Fi
+Horror
+Adventure
+Historical
+Post-Apocalyptic
+Romance
+
+Each genre should have:
+
+- artwork
+- short description
+- atmosphere
+- sample story concept
+
+STEP 2 — Choose World
+
+Examples:
+
+The Forgotten Kingdom
+Cyberpunk Megacity
+Lost Space Colony
+Haunted Victorian Town
+Post-Apocalyptic Wasteland
+Ancient Empire
+
+Allow custom world creation.
+
+STEP 3 — Story Tone
+
+Options:
+
+Dark
+Epic
+Lighthearted
+Suspenseful
+Emotional
+Humorous
+Mysterious
+
+STEP 4 — Story Length
+
+Short
+Medium
+Long
+
+STEP 5 — Difficulty / Choice Complexity
+
+Relaxed
+Balanced
+Complex
+
+STEP 6 — Story Style
+
+Options:
+
+Cinematic
+Novel-like
+Fast-paced
+Dialogue-heavy
+Exploration-heavy
+
+STEP 7 — Start Adventure
+
+Show a summary card before generation.
+```
+
+==================================================
+6. CHARACTER CREATOR
+==================================================
+
+```text
+Create a detailed but simple character creation interface.
+
+Fields:
+
+Character Name
+Age
+Role / Class
+Personality
+Background
+Strengths
+Weaknesses
+Goal
+Fear
+Special Ability
+
+Optional:
+
+Character portrait selection.
+
+Classes:
+
+Warrior
+Mage
+Rogue
+Detective
+Explorer
+Engineer
+Pilot
+Custom
+
+Allow users to create custom classes.
+
+Display a live character card.
+
+Example:
+
+ARIA
+The Exiled Mage
+
+HP
+100
+
+Courage
+82
+
+Intelligence
+94
+
+Agility
+67
+
+Current Goal:
+Find the lost kingdom.
+
+Do not turn these values into a complicated RPG system unless needed.
+
+They primarily exist to create narrative context.
+```
+
+==================================================
+7. STORY GENERATION ENGINE
+==================================================
+
+```text
+Create a modular story-generation service.
+
+The story generation engine should maintain:
+
+- current story
+- previous scenes
+- current chapter
+- character information
+- location
+- discovered characters
+- active quests
+- inventory
+- important decisions
+- world facts
+- story tone
+- genre
+- unresolved events
+- previous consequences
+
+The AI should NOT receive only the latest user message.
+
+Construct structured prompts using relevant story state.
+
+Example conceptual context:
+
+GENRE:
+Fantasy
+
+WORLD:
+Forgotten Kingdom
+
+CHARACTER:
+Aria, an exiled mage
+
+CURRENT LOCATION:
+Ruined castle
+
+ACTIVE QUEST:
+Find the missing royal heir
+
+INVENTORY:
+Ancient key
+Map
+Torch
+
+IMPORTANT EVENTS:
+- Refused to trust the village elder
+- Entered the forbidden forest
+- Discovered the royal insignia
+
+CURRENT SCENE:
+...
+
+PLAYER ACTION:
+...
+
+Generate the next narrative segment while maintaining continuity.
+```
+
+==================================================
+8. PRETRAINED MODEL
+==================================================
+
+```text
+Use a pretrained causal language model.
+
+Preferred initial implementation:
+
+GPT-2
+or
+GPT-Neo
+
+The model must NOT be trained from scratch.
+
+Create an abstraction:
+
+StoryModel
+
+Methods:
+
+generateOpening()
+generateContinuation()
+generateChoices()
+generateSummary()
+generateEnding()
+
+Do not couple the rest of the application directly to the model implementation.
+
+This allows the model to be replaced later.
+
+Potential future models should be replaceable without rewriting the application.
+```
+
+==================================================
+9. STORY GENERATION PIPELINE
+==================================================
+
+```text
+Implement:
+
+User Input
+↓
+Story State
+↓
+Prompt Builder
+↓
+Pretrained Language Model
+↓
+Generated Narrative
+↓
+Post Processing
+↓
+Story State Update
+↓
+UI
+
+The generated result must be validated before being displayed.
+
+Prevent:
+
+- empty outputs
+- excessive repetition
+- broken formatting
+- accidental prompt leakage
+- malformed responses
+- extremely short outputs
+
+Implement sensible generation parameters:
+
+- temperature
+- max tokens
+- top-p
+- repetition penalty
+
+These should be configurable from backend configuration rather than hardcoded throughout the project.
+```
+
+==================================================
+10. STORY READER
+==================================================
+
+```text
+This is the CORE SCREEN.
+
+Design it like a premium interactive digital storybook.
+
+Layout:
+
+TOP BAR
+
+Chapter
+Story title
+Progress
+Save button
+Settings button
+
+MAIN AREA
+
+Current location
+Scene artwork
+Narrative text
+Dialogue
+
+SIDE PANEL / DRAWER
+
+Character
+Inventory
+Quests
+Story memories
+
+BOTTOM
+
+Available choices
+
+Example:
+
+The ancient gates open slowly.
+
+Cold wind escapes from the darkness beyond.
+
+A voice whispers your name.
+
+What do you do?
+
+[Enter the castle]
+
+[Search for another entrance]
+
+[Call out]
+
+[Use magic to inspect the doorway]
+
+Also provide:
+
+[Write your own action]
+
+The custom-action field allows the player to type an action.
+
+Example:
+
+"I light the torch and walk toward the sound."
+
+The AI should generate the consequence.
+```
+
+==================================================
+11. VISUAL STORYTELLING
+==================================================
+
+```text
+Make the story visually rich.
+
+Every major scene should contain:
+
+- location artwork
+- chapter heading
+- scene title
+- atmospheric background
+- character presence where appropriate
+- decorative story elements
+
+Use transitions when moving between scenes.
+
+Example:
+
+Scene changes should use:
+
+- fade
+- cinematic zoom
+- slide
+- subtle parallax
+
+Do not overuse animations.
+
+The story text should remain the focus.
+
+Create a visual hierarchy similar to an interactive digital novel.
+```
+
+==================================================
+12. STORY CHAPTER SYSTEM
+==================================================
+
+```text
+Divide long adventures into chapters.
+
+Example:
+
+CHAPTER I
+The Forgotten Gate
+
+CHAPTER II
+Whispers Beneath the Forest
+
+CHAPTER III
+The Lost Heir
+
+CHAPTER IV
+The Betrayal
+
+CHAPTER V
+The Final Choice
+
+The chapter number should update dynamically.
+
+Each chapter can have:
+
+- title
+- summary
+- major events
+- location
+- objective
+
+Display chapter progression visually.
+```
+
+==================================================
+13. CHOICE SYSTEM
+==================================================
+
+```text
+Generate 2–4 meaningful choices per scene.
+
+Choices should represent different approaches.
+
+Example:
+
+1. Fight
+2. Negotiate
+3. Escape
+4. Investigate
+
+Do not make every choice produce the same result.
+
+Track player decisions.
+
+Store:
+
+choiceId
+choiceText
+timestamp
+sceneId
+result
+consequence
+
+Choices should influence:
+
+- future scenes
+- NPC relationships
+- quests
+- inventory
+- locations
+- story ending
+
+Do not promise perfect branching if the language model cannot guarantee it.
+
+Instead, implement controlled narrative state and consequence tracking.
+```
+
+==================================================
+14. CUSTOM ACTION SYSTEM
+==================================================
+
+```text
+Allow users to type their own actions.
+
+Example:
+
+Player:
+
+"I distract the guards by throwing a stone into the courtyard."
+
+The system should process the action and produce an appropriate narrative consequence.
+
+Show:
+
+YOU CHOSE:
+
+"I distract the guards..."
+
+Then animate:
+
+THE WORLD RESPONDS...
+
+Then display the generated continuation.
+```
+
+==================================================
+15. WORLD STATE
+==================================================
+
+```text
+Create a structured world state.
+
+Example:
+
+WorldState {
+
+  currentLocation
+
+  knownLocations[]
+
+  characters[]
+
+  inventory[]
+
+  quests[]
+
+  completedQuests[]
+
+  relationships[]
+
+  importantEvents[]
+
+  decisions[]
+
+  chapter
+
+  currentObjective
+
+}
+
+The story generator should use this state to preserve continuity.
+
+Never rely solely on the visible story text.
+```
+
+==================================================
+16. CHARACTER MEMORY
+==================================================
+
+```text
+Track important NPCs.
+
+For each character:
+
+Name
+Role
+Description
+Relationship
+First appearance
+Important interactions
+Current status
+
+Example:
+
+ELIAS
+Village Scholar
+
+Relationship:
+Trusting
+
+Known facts:
+- Helped the player
+- Knows about the forbidden forest
+
+Current status:
+Alive
+```
+
+==================================================
+17. INVENTORY
+==================================================
+
+```text
+Add a visual inventory.
+
+Items may be acquired through the story.
+
+Examples:
+
+Ancient Key
+Moonstone
+Map Fragment
+Healing Potion
+Royal Seal
+
+Each item should contain:
+
+- name
+- description
+- quantity
+- icon
+- acquisition event
+
+The story generator should be aware of inventory state.
+```
+
+==================================================
+18. QUEST SYSTEM
+==================================================
+
+```text
+Create a lightweight quest system.
+
+Each quest:
+
+- title
+- description
+- status
+- objective
+- chapter
+- reward/consequence
+
+Statuses:
+
+Active
+Completed
+Failed
+
+Display active quests in the story UI.
+```
+
+==================================================
+19. STORY TIMELINE
+==================================================
+
+```text
+Create a timeline screen.
+
+Display important events chronologically.
+
+Example:
+
+Day 1
+Entered the Forbidden Forest
+
+Day 1
+Met Elias
+
+Day 2
+Found the Ancient Key
+
+Day 3
+Opened the Forgotten Gate
+
+This gives the user the feeling that their journey has been recorded.
+```
+
+==================================================
+20. SAVE SYSTEM
+==================================================
+
+```text
+Users must be able to save stories.
+
+Save:
+
+Story ID
+Title
+Genre
+Created date
+Updated date
+Character
+Current chapter
+Current scene
+World state
+Story history
+
+Provide:
+
+Save automatically
+
+Save manually
+
+Continue Story
+
+Delete Story
+
+Rename Story
+
+Duplicate Story
+```
+
+==================================================
+21. STORY LIBRARY
+==================================================
+
+```text
+Create a "My Stories" page.
+
+Show story cards containing:
+
+- cover image
+- title
+- genre
+- chapter
+- last played time
+- progress
+- status
+
+Example:
+
+THE LAST STARSHIP
+
+Sci-Fi
+
+Chapter 3 / 8
+
+68% progress
+
+[Continue]
+
+Allow:
+
+Search
+Filter by genre
+Sort by recent
+Delete
+Export
+```
+
+==================================================
+22. ENDING SYSTEM
+==================================================
+
+```text
+Eventually allow a story to reach an ending.
+
+Possible endings:
+
+Victory
+Tragedy
+Mystery
+Escape
+Betrayal
+Hidden Ending
+
+The ending should depend on accumulated story state and decisions.
+
+Display an ending screen.
+
+Example:
+
+THE END
+
+"Some doors are meant to remain closed."
+
+Then show:
+
+YOUR JOURNEY
+
+Decisions made
+Characters met
+Quests completed
+Items discovered
+Major events
+Ending type
+
+Add:
+
+[Read Story Again]
+
+[Start New Adventure]
+
+[Export Story]
+```
+
+==================================================
+23. STORY SUMMARY
+==================================================
+
+```text
+After completion, generate a summary.
+
+Display:
+
+TITLE
+
+CHARACTER
+
+GENRE
+
+CHAPTERS COMPLETED
+
+MAJOR DECISIONS
+
+IMPORTANT CHARACTERS
+
+QUESTS
+
+ENDING
+
+TIMELINE
+
+Provide a generated "Previously on..." summary for long stories.
+```
+
+==================================================
+24. EXPORT
+==================================================
+
+```text
+Allow story export as:
+
+TXT
+JSON
+
+Optional:
+
+PDF
+
+Export should contain:
+
+Title
+Character
+Genre
+Chapters
+Narrative
+Choices
+Major decisions
+Ending
+
+Provide:
+
+[Export Story]
+```
+
+==================================================
+25. DASHBOARD
+==================================================
+
+```text
+Create a user dashboard.
+
+Header:
+
+"Welcome back, storyteller."
+
+Main card:
+
+Continue your adventure
+
+Then:
+
+YOUR STORIES
+
+GENRES EXPLORED
+
+CHOICES MADE
+
+CHAPTERS COMPLETED
+
+Also show:
+
+Recently played stories
+
+Draft stories
+
+Completed stories
+```
+
+==================================================
+26. PROFILE
+==================================================
+
+```text
+Create a profile page.
+
+Fields:
+
+Display Name
+Favorite Genre
+Preferred Story Style
+
+Settings:
+
+Theme
+Text size
+Animation intensity
+Sound effects
+Auto-save
+Generation settings
+
+Support:
+
+Light mode
+Dark mode
+System mode
+```
+
+==================================================
+27. SETTINGS
+==================================================
+
+```text
+Create settings for:
+
+Text size
+Narrative density
+Animation level
+Sound
+Auto-save
+Generation preferences
+
+For advanced users:
+
+Temperature
+Top-p
+Max generation length
+
+Only expose technical settings when appropriate.
+```
+
+==================================================
+28. UI DESIGN SYSTEM
+==================================================
+
+```text
+The design should feel:
+
+Cinematic
+Immersive
+Premium
+Modern
+Mysterious
+Interactive
+
+Avoid generic SaaS styling.
+
+Use:
+
+- elegant typography
+- large visual areas
+- layered cards
+- subtle gradients
+- atmospheric backgrounds
+- rounded panels
+- soft shadows
+- elegant icons
+- micro animations
+
+Create two visual modes:
+
+DARK:
+Primary storytelling experience.
+
+LIGHT:
+Readable editorial experience.
+
+The application should still be usable on lower-resolution screens.
+
+Maintain excellent readability.
+```
+
+==================================================
+29. RESPONSIVE DESIGN
+==================================================
+
+```text
+Desktop:
+
+Three-column or two-column story layout.
+
+Tablet:
+
+Two-column adaptive layout.
+
+Mobile:
+
+Single-column story experience.
+
+On mobile:
+
+Story text
+↓
+Scene
+↓
+Choice buttons
+↓
+Custom action
+
+Character/inventory/quest information should move into bottom sheets or drawers.
+
+Do not simply shrink the desktop layout.
+
+Actually redesign the interaction for mobile.
+```
+
+==================================================
+30. STORY BACKGROUND ART
+==================================================
+
+```text
+Architect the frontend so that scenes can have visual backgrounds.
+
+Each scene can specify:
+
+location
+environment
+timeOfDay
+weather
+mood
+
+Example:
+
+location:
+Ancient Castle
+
+time:
+Night
+
+weather:
+Rain
+
+mood:
+Suspenseful
+
+Map that state to an appropriate visual asset.
+
+Do not claim that every image is AI-generated.
+
+Use provided/static assets initially.
+
+Keep an abstraction layer so image generation can be added later.
+```
+
+==================================================
+31. SOUND DESIGN
+==================================================
+
+```text
+Optional but recommended.
+
+Add subtle ambient audio.
+
+Examples:
+
+Fantasy:
+forest ambience
+
+Horror:
+low atmospheric sound
+
+Sci-Fi:
+ship ambience
+
+Add:
+
+Mute button
+Volume control
+
+Never autoplay intrusive audio without user consent.
+```
+
+==================================================
+32. STORY MAP
+==================================================
+
+```text
+Create an optional visual story map.
+
+Display discovered locations as nodes.
+
+Example:
+
+Village
+   |
+Forbidden Forest
+   |
+Ancient Ruins
+   |
+Forgotten Castle
+   |
+Hidden Chamber
+
+Undiscovered areas should remain visually locked.
+
+This gives the story a sense of exploration.
+```
+
+==================================================
+33. ACHIEVEMENTS
+==================================================
+
+```text
+Create lightweight achievements.
+
+Examples:
+
+FIRST CHAPTER
+Completed your first chapter.
+
+EXPLORER
+Discovered 5 locations.
+
+DECISION MAKER
+Made 25 choices.
+
+STORYTELLER
+Completed your first story.
+
+SECRET PATH
+Discovered a hidden branch.
+
+Use these only for engagement, not as a core dependency.
+```
+
+==================================================
+34. SEARCH AND FILTER
+==================================================
+
+```text
+Story library should support:
+
+Search by title
+
+Filter:
+Fantasy
+Mystery
+Sci-Fi
+Horror
+Adventure
+
+Sort:
+Recently played
+Recently created
+Progress
+Completed
+```
+
+==================================================
+35. BACKEND API
+==================================================
+
+```text
+Create a FastAPI backend.
+
+Suggested endpoints:
+
+GET /health
+
+POST /stories
+
+GET /stories
+
+GET /stories/{id}
+
+PATCH /stories/{id}
+
+DELETE /stories/{id}
+
+POST /stories/{id}/generate-opening
+
+POST /stories/{id}/generate-continuation
+
+POST /stories/{id}/choices
+
+POST /stories/{id}/custom-action
+
+GET /stories/{id}/state
+
+GET /stories/{id}/timeline
+
+POST /stories/{id}/export
+
+POST /stories/{id}/summary
+
+Use Pydantic validation.
+
+Return structured JSON.
+
+Never expose model internals directly to the frontend.
+```
+
+==================================================
+36. DATA MODEL
+==================================================
+
+```text
+Create models for:
+
+Story
+Character
+Chapter
+Scene
+Choice
+StoryState
+NPC
+InventoryItem
+Quest
+Decision
+TimelineEvent
+User
+
+Example:
+
+Story {
+
+ id
+ title
+ genre
+ tone
+ createdAt
+ updatedAt
+ status
+ currentChapter
+ characterId
+ worldState
+}
+
+Scene {
+
+ id
+ storyId
+ chapterId
+ narrative
+ location
+ mood
+ createdAt
+}
+
+Choice {
+
+ id
+ sceneId
+ text
+ result
+ consequence
+}
+
+Quest {
+
+ id
+ storyId
+ title
+ description
+ status
+}
+```
+
+==================================================
+37. PROMPT BUILDER
+==================================================
+
+```text
+Build a dedicated prompt builder.
+
+Do not construct giant prompts directly inside route handlers.
+
+Create:
+
+PromptBuilder
+
+Methods:
+
+buildOpeningPrompt()
+buildContinuationPrompt()
+buildChoicePrompt()
+buildSummaryPrompt()
+buildEndingPrompt()
+
+Use structured story state.
+
+Example conceptual prompt:
+
+SYSTEM:
+You are the narrative engine for an interactive fictional story.
+
+GENRE:
+Fantasy
+
+TONE:
+Dark
+
+PLAYER:
+Aria, an exiled mage
+
+WORLD:
+The Forgotten Kingdom
+
+CURRENT LOCATION:
+Ancient Castle
+
+ACTIVE QUEST:
+Find the missing royal heir
+
+IMPORTANT PAST EVENTS:
+...
+
+INVENTORY:
+...
+
+PREVIOUS SCENE:
+...
+
+PLAYER ACTION:
+...
+
+Generate the next story segment.
+
+Maintain continuity.
+
+Do not contradict established facts.
+
+Do not control the player's decisions.
+
+Do not end the entire story unless an ending condition is reached.
+```
+
+==================================================
+38. CONTINUITY ENGINE
+==================================================
+
+```text
+This is extremely important.
+
+Implement basic consistency protection.
+
+Before accepting generated output:
+
+1. Check whether known characters are contradicted
+2. Check whether location changes unexpectedly
+3. Check inventory references
+4. Check story state
+5. Prevent impossible state changes
+
+If generation fails:
+
+Retry generation with a corrected prompt.
+
+If retry fails:
+
+Provide a graceful fallback message.
+
+Never crash the application.
+```
+
+==================================================
+39. GENERATION UX
+==================================================
+
+```text
+When the AI is generating a continuation:
+
+Show:
+
+"THE WORLD IS RESPONDING..."
+
+Use:
+
+- animated text
+- subtle particles
+- progress animation
+- scene transition
+
+Do NOT display a fake percentage such as "AI is 87% done" unless it represents actual progress.
+
+After generation:
+
+Animate the story text into view.
+
+Choice buttons should appear only after the scene is ready.
+```
+
+==================================================
+40. PERFORMANCE
+==================================================
+
+```text
+Optimize the application.
+
+Requirements:
+
+- lazy-load heavy assets
+- optimize images
+- avoid unnecessary React re-renders
+- stream generated text where practical
+- cache static assets
+- debounce search
+- paginate story library
+- avoid blocking the UI during generation
+
+Show generation state clearly.
+
+The frontend must remain responsive while waiting for model inference.
+```
+
+==================================================
+41. ERROR HANDLING
+==================================================
+
+```text
+Gracefully handle:
+
+AI model unavailable
+generation timeout
+empty response
+invalid response
+server error
+network failure
+database failure
+story loading failure
+export failure
+
+Never expose raw stack traces to users.
+
+Show useful messages.
+
+Example:
+
+"The storyteller is taking a moment to gather its thoughts."
+
+[Try Again]
+```
+
+==================================================
+42. DEMO MODE
+==================================================
+
+```text
+Create a Demo Mode.
+
+This is essential for internship presentation.
+
+Demo Mode should use pre-created deterministic stories so the complete application can be demonstrated even when the AI model is unavailable.
+
+Example:
+
+Fantasy Demo
+
+Chapter 1
+The Forgotten Gate
+
+Choice 1
+Enter the castle
+
+Choice 2
+Search the forest
+
+Choice 3
+Talk to the guardian
+
+Each choice should produce a predetermined continuation.
+
+Clearly display:
+
+DEMO MODE
+
+Do NOT represent predetermined content as live AI generation.
+```
+
+==================================================
+43. OFFLINE / DEGRADED MODE
+==================================================
+
+```text
+If the backend/model is unavailable:
+
+- allow saved stories to open
+- allow story history to be viewed
+- allow the user to browse the library
+- show clear AI-unavailable status
+
+Never lose saved progress.
+```
+
+==================================================
+44. SECURITY
+==================================================
+
+```text
+Never hard-code:
+
+- API keys
+- database passwords
+- secrets
+
+Use environment variables.
+
+Create:
+
+.env.example
+
+Validate all API input.
+
+Sanitize exported files.
+
+Prevent malicious or malformed story state from crashing the backend.
+```
+
+==================================================
+45. PRIVACY
+==================================================
+
+```text
+The application should explain:
+
+- stories are stored only as required
+- no unnecessary personal data is collected
+- user-generated content is treated as application data
+- model provider usage, if any, is clearly disclosed
+
+Create a simple Privacy page.
+```
+
+==================================================
+46. ACCESSIBILITY
+==================================================
+
+```text
+Support:
+
+- keyboard navigation
+- proper focus states
+- readable contrast
+- semantic HTML
+- screen reader labels
+- accessible buttons
+- adjustable text size
+
+Do not communicate information only through color.
+```
+
+==================================================
+47. TESTING
+==================================================
+
+```text
+Create tests for:
+
+PromptBuilder
+Story state updates
+Choice processing
+Inventory updates
+Quest updates
+Timeline events
+Story save/load
+Generation failure
+Generation retry
+Ending detection
+Export functionality
+
+Test scenarios:
+
+1. New story
+2. Save story
+3. Resume story
+4. Make choice
+5. Custom action
+6. Acquire item
+7. Complete quest
+8. Reach ending
+9. Export story
+10. AI generation failure
+```
+
+==================================================
+48. PROJECT ARCHITECTURE
+==================================================
+
+Use a modular architecture such as:
+
+frontend/
+  app/
+  components/
+  screens/
+  hooks/
+  services/
+  store/
+  types/
+  utils/
+  animations/
+  assets/
+
+backend/
+  app/
+    api/
+    models/
+    schemas/
+    services/
+      story_engine/
+      prompt_builder/
+      model/
+      state_manager/
+      export/
+    database/
+    utils/
+    main.py
+
+Create clear separation between:
+
+UI
+Business logic
+Story engine
+AI inference
+Persistence
+API
+```
+
+==================================================
+49. STORY ENGINE ABSTRACTION
+==================================================
+
+```text
+Create:
+
+StoryEngine
+
+Responsibilities:
+
+- startStory
+- processChoice
+- processCustomAction
+- updateWorldState
+- updateInventory
+- updateQuest
+- addTimelineEvent
+- generateContinuation
+- generateSummary
+- determineEnding
+
+The story engine should NOT depend directly on React.
+
+This makes the system testable and extensible.
+```
+
+==================================================
+50. MODEL ABSTRACTION
+==================================================
+
+```text
+Create:
+
+BaseStoryModel
+
+Implementation:
+
+GPT2StoryModel
+GPTNeoStoryModel
+
+Methods:
+
+generate(prompt, parameters)
+
+The rest of the application should call:
+
+StoryModel.generate()
+
+instead of importing GPT-2/GPT-Neo everywhere.
+```
+
+==================================================
+51. FUTURE EXTENSIONS
+==================================================
+
+Architect the application so these could later be added without major rewrites:
+
+- AI-generated scene images
+- AI-generated character portraits
+- voice narration
+- speech input
+- multiplayer stories
+- collaborative storytelling
+- larger language models
+- cloud synchronization
+- story sharing
+- public story library
+- branching story graph
+- advanced RPG mechanics
+- character relationship system
+- procedural world generation
+
+Do not implement every future feature now.
+
+Make the architecture extensible.
+```
+
+==================================================
+52. INTERNSHIP REQUIREMENTS
+==================================================
+
+```text
+The original internship project expects:
+
+- pretrained GPT-2/GPT-Neo
+- prompt-based generation
+- story continuation
+- multiple continuations
+- genre selection
+- saving story as text
+- Streamlit deployment
+
+Preserve these core requirements while implementing the final product as a modern full-stack web application.
+
+Do not add unnecessary complexity that prevents the core requirements from working.
+```
+
+The source project definition specifically mentions these features, so they must remain part of the finished implementation. :chatgpt-content-reference{index="1"}
+
+==================================================
+53. INTERNSHIP DEMONSTRATION FLOW
+==================================================
+
+```text
+The application should be demonstrable in approximately 3–5 minutes.
+
+DEMO:
+
+1. Open MYTHOS
+2. Click "Start Your Adventure"
+3. Select Fantasy
+4. Select "The Forgotten Kingdom"
+5. Create character "Aria"
+6. Select Dark/Cinematic style
+7. Generate opening
+8. Display cinematic scene
+9. Select a choice
+10. AI generates consequence
+11. Show updated quest/inventory
+12. Make another choice
+13. Show timeline update
+14. Open story map
+15. Continue to another chapter
+16. Finish story
+17. Show ending
+18. Open story summary
+19. Save/export story
+20. Return to "My Stories"
+
+Every step must actually work.
+```
+
+==================================================
+54. UI SCREENS REQUIRED
+==================================================
+
+```text
+Create at minimum:
+
+1. Landing Page
+2. Onboarding
+3. Dashboard
+4. Create Story
+5. Character Creator
+6. Genre Selection
+7. World Selection
+8. Story Preferences
+9. Story Reader
+10. Character Panel
+11. Inventory Panel
+12. Quest Panel
+13. Story Timeline
+14. Story Map
+15. Story Library
+16. Story Details
+17. Ending Screen
+18. Summary Screen
+19. Profile
+20. Settings
+21. Privacy
+22. Demo Mode
+
+All navigation must work.
+```
+
+==================================================
+55. VISUAL QUALITY REQUIREMENT
+==================================================
+
+```text
+The final product should visually resemble a premium interactive storytelling platform.
+
+It should NOT look like:
+
+- a classroom CRUD project
+- a generic Tailwind starter
+- a plain chatbot
+- a basic Streamlit application
+- a static story webpage
+
+The most important visual areas are:
+
+1. Landing page
+2. Story creation
+3. Story reader
+4. Choice system
+5. Story progression
+6. Ending screen
+
+Use cinematic transitions between these experiences.
+```
+
+==================================================
+56. CODE QUALITY
+==================================================
+
+```text
+Write clean, maintainable TypeScript and Python.
+
+Requirements:
+
+- type safety
+- meaningful variable names
+- modular functions
+- reusable components
+- comments for non-obvious algorithms
+- no giant components
+- no duplicated business logic
+- no hard-coded story state
+- environment-based configuration
+
+Avoid unnecessary dependencies.
+
+Handle loading and error states properly.
+```
+
+==================================================
+57. DOCUMENTATION
+==================================================
+
+Create a complete README.md containing:
+
+1. Project title
+2. Introduction
+3. Problem statement
+4. Objective
+5. Features
+6. Technology stack
+7. System architecture
+8. Story-generation workflow
+9. Prompt architecture
+10. World-state architecture
+11. Database structure
+12. API documentation
+13. Installation
+14. Environment setup
+15. Running frontend
+16. Running backend
+17. Model setup
+18. Demo mode
+19. Testing
+20. Future enhancements
+21. Limitations
+
+IMPORTANT:
+
+Clearly explain that this project uses a pretrained language model for inference and does not train a custom model.
+```
+
+==================================================
+58. TECHNICAL EXPLANATION FOR INTERVIEW
+==================================================
+
+```text
+Make the project easy to explain.
+
+The core pipeline should be:
+
+USER
+ ↓
+Story Configuration
+ ↓
+Character + World State
+ ↓
+Prompt Builder
+ ↓
+Pretrained Language Model
+ ↓
+Generated Narrative
+ ↓
+Story State Parser
+ ↓
+State Update
+ ↓
+Database
+ ↓
+Frontend
+
+Explain the AI component as:
+
+"Instead of training our own language model, we use a pretrained generative language model and construct context-aware prompts using the current story state. This allows the model to generate the next narrative segment while our application manages continuity, choices, inventory, quests and progression."
+
+This distinction is important.
+```
+
+==================================================
+59. FINAL ACCEPTANCE CRITERIA
+==================================================
+
+```text
+The project is complete only when:
+
+[ ] Landing page works
+[ ] Story creation works
+[ ] Genre selection works
+[ ] Character creation works
+[ ] World selection works
+[ ] Story generation works
+[ ] Multiple continuations work
+[ ] User choices work
+[ ] Custom actions work
+[ ] Story state is maintained
+[ ] Character state works
+[ ] Inventory works
+[ ] Quest tracking works
+[ ] Timeline works
+[ ] Chapter progression works
+[ ] Save works
+[ ] Resume works
+[ ] Story library works
+[ ] Ending works
+[ ] Summary works
+[ ] Export works
+[ ] Demo mode works
+[ ] Error handling works
+[ ] Responsive mobile layout works
+[ ] Desktop layout works
+[ ] Dark/light mode works
+[ ] Backend API works
+[ ] Database persistence works
+[ ] Tests pass
+[ ] README is complete
+[ ] No core functionality is replaced by placeholders
+```
+
+==================================================
+60. DEVELOPMENT INSTRUCTIONS
+==================================================
+
+```text
+Build the application incrementally.
+
+PHASE 1
+Initialize project and architecture.
+
+PHASE 2
+Build design system.
+
+PHASE 3
+Build landing page.
+
+PHASE 4
+Build story creation flow.
+
+PHASE 5
+Build character creator.
+
+PHASE 6
+Build backend and database.
+
+PHASE 7
+Integrate pretrained language model.
+
+PHASE 8
+Build prompt engine.
+
+PHASE 9
+Build story state engine.
+
+PHASE 10
+Build story reader.
+
+PHASE 11
+Build choice system.
+
+PHASE 12
+Build custom action system.
+
+PHASE 13
+Build inventory and quest systems.
+
+PHASE 14
+Build timeline and story map.
+
+PHASE 15
+Build saving and story library.
+
+PHASE 16
+Build ending and summary.
+
+PHASE 17
+Build export.
+
+PHASE 18
+Add demo mode.
+
+PHASE 19
+Add animations and visual polish.
+
+PHASE 20
+Testing.
+
+PHASE 21
+Performance optimization.
+
+PHASE 22
+Final deployment configuration.
+
+Do not proceed by creating only placeholder screens.
+
+Implement the actual functionality at every stage.
+```
+
+# CORE ARCHITECTURE
+
+The most important part I'd have the coding agent implement is this:
+
+```text
+                    ┌───────────────────┐
+                    │   Web Frontend    │
+                    │ React / Next.js   │
+                    └─────────┬─────────┘
+                              │
+                              ▼
+                    ┌───────────────────┐
+                    │   Story API       │
+                    │     FastAPI       │
+                    └─────────┬─────────┘
+                              │
+                ┌─────────────┼──────────────┐
+                ▼             ▼              ▼
+       ┌──────────────┐ ┌────────────┐ ┌──────────────┐
+       │ Story Engine │ │ Prompt     │ │ Database     │
+       │              │ │ Builder    │ │              │
+       └──────┬───────┘ └─────┬──────┘ └──────────────┘
+              │               │
+              │               ▼
+              │      ┌──────────────────┐
+              │      │ Pretrained       │
+              │      │ GPT-2 / GPT-Neo  │
+              │      └────────┬─────────┘
+              │               │
+              └───────────────┘
+                      │
+                      ▼
+             ┌───────────────────┐
+             │ Updated World     │
+             │ State             │
+             │                   │
+             │ Characters        │
+             │ Inventory         │
+             │ Quests            │
+             │ Decisions         │
+             │ Timeline          │
+             └───────────────────┘
+```
+
+### The key difference from a basic AI storyteller
+
+Don't make:
+
+**Prompt → GPT → Text**
+
+Make:
+
+**Prompt → AI → Narrative → State extraction → World state update → New context → Next narrative**
+
+That turns it from a simple **"AI text generator"** into an actual **interactive storytelling system**.
+
+And it stays aligned with the internship's original requirement of using a pretrained GPT-2/GPT-Neo model, prompt-based generation, multiple continuations, genre selection and story saving rather than requiring you to train a model yourself. :chatgpt-content-reference{index="2"}

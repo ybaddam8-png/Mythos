@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: stories
+    description: Saved adventures and generated story turns
 paths:
   /healthz:
     get:
@@ -24,6 +26,117 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /stories:
+    get:
+      operationId: listStories
+      tags: [stories]
+      summary: List saved stories
+      responses:
+        "200":
+          description: Saved stories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Story"
+    post:
+      operationId: createStory
+      tags: [stories]
+      summary: Create a story and generate its opening scene
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StoryInput"
+      responses:
+        "201":
+          description: Created story
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Story"
+  /stories/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getStory
+      tags: [stories]
+      summary: Get a saved story
+      responses:
+        "200":
+          description: Saved story
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Story"
+        "404":
+          description: Story not found
+    patch:
+      operationId: updateStory
+      tags: [stories]
+      summary: Rename a saved story
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StoryUpdate"
+      responses:
+        "200":
+          description: Updated story
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Story"
+    delete:
+      operationId: deleteStory
+      tags: [stories]
+      summary: Delete a saved story
+      responses:
+        "204":
+          description: Story deleted
+  /stories/{id}/turn:
+    post:
+      operationId: advanceStory
+      tags: [stories]
+      summary: Generate a story opening or continuation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StoryTurnInput"
+      responses:
+        "200":
+          description: Story with the new scene
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Story"
+  /stories/stats:
+    get:
+      operationId: getStoryStats
+      tags: [stories]
+      summary: Get library overview statistics
+      responses:
+        "200":
+          description: Story library statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StoryStats"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +146,112 @@ components:
           type: string
       required:
         - status
+    Character:
+      type: object
+      required: [name, age, role, personality, background, strengths, weaknesses, goal, fear, ability]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 60 }
+        age: { type: integer, minimum: 1, maximum: 999 }
+        role: { type: string, minLength: 1, maxLength: 60 }
+        personality: { type: string, maxLength: 300 }
+        background: { type: string, maxLength: 500 }
+        strengths: { type: string, maxLength: 200 }
+        weaknesses: { type: string, maxLength: 200 }
+        goal: { type: string, maxLength: 300 }
+        fear: { type: string, maxLength: 300 }
+        ability: { type: string, maxLength: 200 }
+    Choice:
+      type: object
+      required: [id, text]
+      properties:
+        id: { type: string }
+        text: { type: string }
+    Scene:
+      type: object
+      required: [id, chapter, chapterTitle, title, location, mood, narrative, choices, createdAt]
+      properties:
+        id: { type: string }
+        chapter: { type: integer, minimum: 1 }
+        chapterTitle: { type: string }
+        title: { type: string }
+        location: { type: string }
+        mood: { type: string }
+        narrative: { type: string }
+        playerAction: { type: ["string", "null"] }
+        choices:
+          type: array
+          items: { $ref: "#/components/schemas/Choice" }
+        createdAt: { type: string, format: date-time }
+    WorldState:
+      type: object
+      required: [currentLocation, inventory, quests, importantEvents, decisions, currentObjective]
+      properties:
+        currentLocation: { type: string }
+        inventory:
+          type: array
+          items: { type: string }
+        quests:
+          type: array
+          items: { type: string }
+        importantEvents:
+          type: array
+          items: { type: string }
+        decisions:
+          type: array
+          items: { type: string }
+        currentObjective: { type: string }
+        discoveredCharacters:
+          type: array
+          items: { type: string }
+    Story:
+      type: object
+      required: [id, title, genre, world, tone, length, difficulty, style, character, scenes, state, status, createdAt, updatedAt]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        genre: { type: string }
+        world: { type: string }
+        tone: { type: string }
+        length: { type: string }
+        difficulty: { type: string }
+        style: { type: string }
+        character: { $ref: "#/components/schemas/Character" }
+        scenes:
+          type: array
+          items: { $ref: "#/components/schemas/Scene" }
+        state: { $ref: "#/components/schemas/WorldState" }
+        status: { type: string, enum: [active, completed] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    StoryInput:
+      type: object
+      required: [title, genre, world, tone, length, difficulty, style, character]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 120 }
+        genre: { type: string, minLength: 1, maxLength: 40 }
+        world: { type: string, minLength: 1, maxLength: 300 }
+        tone: { type: string, minLength: 1, maxLength: 40 }
+        length: { type: string, minLength: 1, maxLength: 20 }
+        difficulty: { type: string, minLength: 1, maxLength: 20 }
+        style: { type: string, minLength: 1, maxLength: 40 }
+        character: { $ref: "#/components/schemas/Character" }
+    StoryUpdate:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 120 }
+    StoryTurnInput:
+      type: object
+      required: [action]
+      properties:
+        action: { type: ["string", "null"], maxLength: 1000 }
+    StoryStats:
+      type: object
+      required: [total, active, completed, choices, chapters]
+      properties:
+        total: { type: integer }
+        active: { type: integer }
+        completed: { type: integer }
+        choices: { type: integer }
+        chapters: { type: integer }
 

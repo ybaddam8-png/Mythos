@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Mythos — AI Interactive Storyteller"
+description = "A responsive interactive storybook where players create characters, explore AI-generated worlds, make consequential choices, and save or export their adventures."
+version = "1.0.0"
+id = "artifacts/mythos-storyteller"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25490
+
+[services.development]
+run = "pnpm --filter @workspace/mythos-storyteller run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/mythos-storyteller", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/mythos-storyteller/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25490"
+BASE_PATH = "/"
