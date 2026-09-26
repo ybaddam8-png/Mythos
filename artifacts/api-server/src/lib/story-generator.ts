@@ -20,6 +20,16 @@ type GeneratedTurn = {
   storyComplete?: boolean;
 };
 
+export class StoryGenerationError extends Error {
+  constructor(
+    message: string,
+    readonly providerStatus: number,
+  ) {
+    super(message);
+    this.name = "StoryGenerationError";
+  }
+}
+
 function asObject(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
@@ -134,6 +144,49 @@ function promptFor(
   });
 }
 
+async function providerError(response: Response): Promise<StoryGenerationError> {
+  let code: string | undefined;
+  let type: string | undefined;
+
+  try {
+    const payload = asObject(await response.clone().json());
+    const detail = asObject(payload?.error);
+    code = typeof detail?.code === "string" ? detail.code : undefined;
+    type = typeof detail?.type === "string" ? detail.type : undefined;
+  } catch {
+    // Keep provider errors generic if the upstream body is not JSON.
+  }
+
+  if (response.status === 401) {
+    return new StoryGenerationError(
+      "The OpenAI API key was rejected. Check that the saved key is valid.",
+      response.status,
+    );
+  }
+  if (response.status === 429 && (code === "insufficient_quota" || type === "insufficient_quota")) {
+    return new StoryGenerationError(
+      "The OpenAI API key has no available quota. Add API billing or credits to that OpenAI account, then try again.",
+      response.status,
+    );
+  }
+  if (response.status === 429) {
+    return new StoryGenerationError(
+      "OpenAI is temporarily rate-limiting requests. Wait a moment, then try again.",
+      response.status,
+    );
+  }
+  if (response.status === 404) {
+    return new StoryGenerationError(
+      "The configured OpenAI model is unavailable for this API key.",
+      response.status,
+    );
+  }
+  return new StoryGenerationError(
+    `The story generation provider returned HTTP ${response.status}.`,
+    response.status,
+  );
+}
+
 export async function generateStoryTurn(
   story: StoryRecord,
   action: string | null,
@@ -181,7 +234,7 @@ export async function generateStoryTurn(
   });
 
   if (!response.ok) {
-    throw new Error(`Story generation provider returned HTTP ${response.status}.`);
+    throw await providerError(response);
   }
 
   const payload = asObject(await response.json());

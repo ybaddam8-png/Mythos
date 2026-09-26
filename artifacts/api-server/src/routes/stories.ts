@@ -17,7 +17,7 @@ import {
   UpdateStoryResponse,
 } from "@workspace/api-zod";
 import { db, storiesTable, type StoryRecord } from "@workspace/db";
-import { generateStoryTurn } from "../lib/story-generator";
+import { generateStoryTurn, StoryGenerationError } from "../lib/story-generator";
 
 const router: IRouter = Router();
 const uuidPattern =
@@ -134,8 +134,11 @@ router.post("/stories", async (req, res): Promise<void> => {
     res.status(201).json(CreateStoryResponse.parse(responseStory(created)));
   } catch (error) {
     req.log.error({ err: error }, "Could not create story opening");
-    res.status(502).json({
-      error: "The opening scene could not be generated. Check the AI connection and try again.",
+    res.status(error instanceof StoryGenerationError ? 503 : 502).json({
+      error:
+        error instanceof StoryGenerationError
+          ? error.message
+          : "The opening scene could not be generated. Check the AI connection and try again.",
     });
   }
 });
@@ -273,8 +276,11 @@ router.post("/stories/:id/turn", async (req, res): Promise<void> => {
     res.json(AdvanceStoryResponse.parse(responseStory(updated)));
   } catch (error) {
     req.log.error({ err: error, storyId: story.id }, "Could not generate story continuation");
-    res.status(502).json({
-      error: "The next scene could not be generated. Your story is safe; try again.",
+    res.status(error instanceof StoryGenerationError ? 503 : 502).json({
+      error:
+        error instanceof StoryGenerationError
+          ? error.message
+          : "The next scene could not be generated. Your story is safe; try again.",
     });
   }
 });
