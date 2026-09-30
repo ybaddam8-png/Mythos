@@ -44,6 +44,25 @@ Thumbs.db
 .cursor/rules/nx-rules.mdc
 .github/instructions/nx.instructions.md
 
+# Vite caches
+.vite/
+.vite-temp/
+
+# Turbo
+.turbo/
+
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Lint / test caches
+.eslintcache
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
 # Replit
 .cache/
 .local/
