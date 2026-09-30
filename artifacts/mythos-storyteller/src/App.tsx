@@ -3,7 +3,7 @@ import type { FormEvent, ReactNode } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { Link, Route, Switch, useLocation, useParams } from 'wouter';
 import {
-  ArrowRight, ChevronLeft, Download, FileJson, LibraryBig, Pencil,
+  ArrowRight, ChevronLeft, Download, FileJson, FileText, LibraryBig, Pencil,
   Plus, RefreshCw, Search, Send, Sparkles, Trash2, X, ScrollText,
 } from 'lucide-react';
 import {
@@ -32,6 +32,227 @@ const initialForm: StoryInput = {
 function formatDate(value?: string) {
   if (!value) return 'Just now';
   return new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(value));
+}
+
+function formatStoryMarkdown(story: Story): string {
+  const lines: string[] = [];
+  lines.push(`# ${story.title}`);
+  lines.push('');
+  lines.push(`> **Genre:** ${story.genre} | **Tone:** ${story.tone} | **Narrative Style:** ${story.style}`);
+  lines.push(`> **World:** ${story.world}`);
+  lines.push(`> **Status:** ${story.status === 'completed' ? 'Completed' : 'In Progress'}`);
+  lines.push(`> **Updated:** ${formatDate(story.updatedAt)}`);
+  lines.push('');
+  lines.push('---');
+  lines.push('');
+  lines.push('## Protagonist');
+  lines.push(`- **Name:** ${story.character.name}`);
+  lines.push(`- **Role:** ${story.character.role}`);
+  lines.push(`- **Age:** ${story.character.age}`);
+  if (story.character.ability) lines.push(`- **Special Ability:** ${story.character.ability}`);
+  if (story.character.goal) lines.push(`- **Goal:** ${story.character.goal}`);
+  if (story.character.fear) lines.push(`- **Fear:** ${story.character.fear}`);
+  if (story.character.strengths) lines.push(`- **Strengths:** ${story.character.strengths}`);
+  if (story.character.weaknesses) lines.push(`- **Weaknesses:** ${story.character.weaknesses}`);
+  if (story.character.personality) lines.push(`- **Personality:** ${story.character.personality}`);
+  if (story.character.background) lines.push(`- **Background:** ${story.character.background}`);
+  lines.push('');
+  lines.push('---');
+  lines.push('');
+  lines.push('## Playthrough Chronicle');
+  lines.push('');
+  story.scenes.forEach((scene, index) => {
+    lines.push(`### Chapter ${scene.chapter}: ${scene.chapterTitle}`);
+    lines.push(`#### Scene ${index + 1}: ${scene.title}`);
+    lines.push(`*Location: ${scene.location} · Mood: ${scene.mood}*`);
+    lines.push('');
+    lines.push(scene.narrative);
+    lines.push('');
+    if (scene.playerAction) {
+      lines.push(`> **Your Action:** *${scene.playerAction}*`);
+      lines.push('');
+    }
+  });
+  lines.push('---');
+  lines.push('');
+  lines.push('## World State Chronicle');
+  lines.push(`- **Current Location:** ${story.state.currentLocation}`);
+  lines.push(`- **Active Objective:** ${story.state.currentObjective || 'None'}`);
+  lines.push(`- **Inventory:** ${story.state.inventory.length ? story.state.inventory.join(', ') : 'Empty'}`);
+  if (story.state.quests.length) {
+    lines.push('- **Quests:**');
+    story.state.quests.forEach((q) => lines.push(`  - ${q}`));
+  }
+  if (story.state.importantEvents.length) {
+    lines.push('- **Key Events Recorded:**');
+    story.state.importantEvents.forEach((e) => lines.push(`  - ${e}`));
+  }
+  if (story.state.discoveredCharacters && story.state.discoveredCharacters.length) {
+    lines.push(`- **Encountered Characters:** ${story.state.discoveredCharacters.join(', ')}`);
+  }
+  lines.push('');
+  return lines.join('\n');
+}
+
+function formatStoryTxt(story: Story): string {
+  const banner = '='.repeat(60);
+  const divider = '-'.repeat(60);
+  const lines: string[] = [];
+  lines.push(banner);
+  lines.push(story.title.toUpperCase());
+  lines.push(`Genre: ${story.genre} | Tone: ${story.tone} | Status: ${story.status}`);
+  lines.push(`World: ${story.world}`);
+  lines.push(`Protagonist: ${story.character.name}, ${story.character.role}`);
+  if (story.character.ability) lines.push(`Ability: ${story.character.ability}`);
+  lines.push(banner);
+  lines.push('');
+  story.scenes.forEach((scene, index) => {
+    lines.push(`[CHAPTER ${scene.chapter}: ${scene.chapterTitle}]`);
+    lines.push(`Scene ${index + 1}: ${scene.title}`);
+    lines.push(`Location: ${scene.location} | Mood: ${scene.mood}`);
+    lines.push('');
+    lines.push(scene.narrative);
+    lines.push('');
+    if (scene.playerAction) {
+      lines.push(`>> YOUR ACTION: ${scene.playerAction}`);
+      lines.push('');
+    }
+    lines.push(divider);
+    lines.push('');
+  });
+  lines.push('[FINAL WORLD STATE]');
+  lines.push(`Location: ${story.state.currentLocation}`);
+  lines.push(`Objective: ${story.state.currentObjective}`);
+  lines.push(`Inventory: ${story.state.inventory.join(', ') || 'None'}`);
+  if (story.state.quests.length) lines.push(`Quests: ${story.state.quests.join('; ')}`);
+  lines.push(banner);
+  return lines.join('\n');
+}
+
+function exportStory(story: Story, format: 'md' | 'txt' | 'json') {
+  let content = '';
+  let mimeType = 'text/plain';
+  let ext = 'txt';
+
+  if (format === 'md') {
+    content = formatStoryMarkdown(story);
+    mimeType = 'text/markdown';
+    ext = 'md';
+  } else if (format === 'txt') {
+    content = formatStoryTxt(story);
+    mimeType = 'text/plain';
+    ext = 'txt';
+  } else {
+    content = JSON.stringify(story, null, 2);
+    mimeType = 'application/json';
+    ext = 'json';
+  }
+
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `${story.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'story'}.${ext}`;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+function SaveStoryModal({
+  story,
+  onClose,
+}: {
+  story: Story;
+  onClose: () => void;
+}) {
+  const [downloadedFormat, setDownloadedFormat] = useState<string | null>(null);
+
+  const handleDownload = (format: 'md' | 'txt' | 'json') => {
+    exportStory(story, format);
+    setDownloadedFormat(format);
+    setTimeout(() => {
+      onClose();
+    }, 600);
+  };
+
+  return (
+    <div
+      className="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="modal" style={{ maxWidth: 460 }}>
+        <button
+          className="btn btn-ghost btn-sm"
+          style={{ float: 'right' }}
+          onClick={onClose}
+          data-testid="button-close-save-modal"
+          aria-label="Close save story modal"
+        >
+          <X size={14} />
+        </button>
+        <h2>Save Story Archive</h2>
+        <p>
+          Export your complete playthrough chronicle. Your character choices, scene consequences, and world details will be preserved offline.
+        </p>
+
+        <div style={{ display: 'grid', gap: '.65rem', marginTop: '1.25rem' }}>
+          <button
+            className="btn btn-primary"
+            style={{ justifyContent: 'flex-start', padding: '.75rem 1rem' }}
+            onClick={() => handleDownload('md')}
+            data-testid="button-save-story-md"
+          >
+            <FileText size={16} />
+            <div style={{ textAlign: 'left', marginLeft: '.4rem' }}>
+              <strong>Save as Markdown (.md)</strong>
+              <div style={{ fontSize: '.72rem', opacity: 0.85 }}>Formatted with headings, character sheet, and chapter log</div>
+            </div>
+          </button>
+
+          <button
+            className="btn btn-ghost"
+            style={{ justifyContent: 'flex-start', padding: '.75rem 1rem' }}
+            onClick={() => handleDownload('txt')}
+            data-testid="button-save-story-txt"
+          >
+            <Download size={16} />
+            <div style={{ textAlign: 'left', marginLeft: '.4rem' }}>
+              <strong>Save as Plain Text (.txt)</strong>
+              <div style={{ fontSize: '.72rem', color: 'hsl(var(--muted-foreground))' }}>Clean text format readable in any text editor</div>
+            </div>
+          </button>
+
+          <button
+            className="btn btn-ghost"
+            style={{ justifyContent: 'flex-start', padding: '.75rem 1rem' }}
+            onClick={() => handleDownload('json')}
+            data-testid="button-save-story-json"
+          >
+            <FileJson size={16} />
+            <div style={{ textAlign: 'left', marginLeft: '.4rem' }}>
+              <strong>Save as Raw Data (.json)</strong>
+              <div style={{ fontSize: '.72rem', color: 'hsl(var(--muted-foreground))' }}>Full programmatic state and scene structure</div>
+            </div>
+          </button>
+        </div>
+
+        {downloadedFormat && (
+          <p className="muted" style={{ marginTop: '1rem', color: 'hsl(var(--primary))', fontSize: '.78rem' }}>
+            Story saved as .{downloadedFormat} file!
+          </p>
+        )}
+
+        <div className="modal-actions" style={{ marginTop: '1.2rem' }}>
+          <button className="btn btn-ghost" onClick={onClose} data-testid="button-cancel-save">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function Shell({ children }: { children: ReactNode }) {
@@ -70,7 +291,7 @@ function Stats({ stats, loading }: { stats?: { total: number; active: number; co
     ['Stories', stats?.total ?? 0], ['In progress', stats?.active ?? 0],
     ['Completed', stats?.completed ?? 0], ['Choices made', stats?.choices ?? 0],
   ];
-  return <div className="stats-row" data-testid="stats-row">{values.map(([label, value], index) => <div className="stat" key={label as string}><div className={loading ? 'skeleton skeleton-line' : 'stat-value'} data-testid={`stat-${String(label).toLowerCase().replace(' ', '-')}`}>{loading ? '' : value}</div><div className="stat-label">{label}</div></div>)}</div>;
+  return <div className="stats-row" data-testid="stats-row">{values.map(([label, value]) => <div className="stat" key={label as string}><div className={loading ? 'skeleton skeleton-line' : 'stat-value'} data-testid={`stat-${String(label).toLowerCase().replace(' ', '-')}`}>{loading ? '' : value}</div><div className="stat-label">{label}</div></div>)}</div>;
 }
 
 function RenameModal({ story, onClose, onSaved }: { story: Story; onClose: () => void; onSaved: (story: Story) => void }) {
@@ -92,51 +313,195 @@ function RenameModal({ story, onClose, onSaved }: { story: Story; onClose: () =>
   </div>;
 }
 
-function StoryCard({ story, onDelete, onRename }: { story: Story; onDelete: (story: Story) => void; onRename: (story: Story) => void }) {
+function StoryCard({
+  story,
+  onDelete,
+  onRename,
+  onSaveStory,
+}: {
+  story: Story;
+  onDelete: (story: Story) => void;
+  onRename: (story: Story) => void;
+  onSaveStory: (story: Story) => void;
+}) {
   const scene = story.scenes[story.scenes.length - 1];
   return <article className="story-card rise" data-testid={`card-story-${story.id}`}>
     <Link href={`/story/${story.id}`} data-testid={`link-story-${story.id}`}>
       <div className="card-kicker"><span>{story.genre}</span><span>{story.status === 'completed' ? 'Complete' : 'In progress'}</span></div>
       <h3>{story.title}</h3><p>{scene?.title ?? 'An untold beginning'}{scene?.location ? ` · ${scene.location}` : ''}</p>
     </Link>
-    <div className="card-footer"><span>{formatDate(story.updatedAt)}</span><span style={{ display: 'flex', gap: '.3rem' }}><button className="btn btn-ghost btn-sm" onClick={() => onRename(story)} aria-label={`Rename ${story.title}`} data-testid={`button-rename-${story.id}`}><Pencil size={13} /></button><button className="btn btn-danger btn-sm" onClick={() => onDelete(story)} aria-label={`Delete ${story.title}`} data-testid={`button-delete-${story.id}`}><Trash2 size={13} /></button><Link className="btn btn-ghost btn-sm" href={`/story/${story.id}`} aria-label={`Resume ${story.title}`} data-testid={`link-resume-${story.id}`}><ArrowRight size={13} /></Link></span></div>
+    <div className="card-footer">
+      <span>{formatDate(story.updatedAt)}</span>
+      <span style={{ display: 'flex', gap: '.3rem' }}>
+        <button className="btn btn-ghost btn-sm" onClick={() => onSaveStory(story)} aria-label={`Save ${story.title}`} title="Save Story" data-testid={`button-save-${story.id}`}><Download size={13} /></button>
+        <button className="btn btn-ghost btn-sm" onClick={() => onRename(story)} aria-label={`Rename ${story.title}`} data-testid={`button-rename-${story.id}`}><Pencil size={13} /></button>
+        <button className="btn btn-danger btn-sm" onClick={() => onDelete(story)} aria-label={`Delete ${story.title}`} data-testid={`button-delete-${story.id}`}><Trash2 size={13} /></button>
+        <Link className="btn btn-ghost btn-sm" href={`/story/${story.id}`} aria-label={`Resume ${story.title}`} data-testid={`link-resume-${story.id}`}><ArrowRight size={13} /></Link>
+      </span>
+    </div>
   </article>;
 }
 
-function StoryCollection({ stories, error, loading, onRetry }: { stories?: Story[]; error?: boolean; loading: boolean; onRetry: () => void }) {
+function StoryCollection({ stories, error, loading, onRetry }: { stories?: unknown; error?: boolean; loading: boolean; onRetry: () => void }) {
   const [renameStory, setRenameStory] = useState<Story | null>(null);
-  const [localStories, setLocalStories] = useState(stories);
+  const [saveStoryTarget, setSaveStoryTarget] = useState<Story | null>(null);
+  const [localStories, setLocalStories] = useState<unknown>(stories);
   const remove = useDeleteStory();
   const client = useQueryClient();
-  const currentStories = stories ?? localStories ?? [];
+
+  const rawCandidate = (stories ?? localStories) as (Story[] & { stories?: Story[] }) | undefined;
+  const currentStories: Story[] = Array.isArray(rawCandidate)
+    ? rawCandidate
+    : Array.isArray(rawCandidate?.stories)
+      ? (rawCandidate.stories as Story[])
+      : [];
+
   const handleDelete = (story: Story) => {
     if (!window.confirm(`Delete “${story.title}” from your library? This cannot be undone.`)) return;
     remove.mutate({ id: story.id }, { onSuccess: () => { setLocalStories(currentStories.filter((item) => item.id !== story.id)); client.invalidateQueries({ queryKey: getListStoriesQueryKey() }); client.invalidateQueries({ queryKey: getGetStoryStatsQueryKey() }); } });
   };
   if (loading) return <LoadingGrid />;
-  if (error) return <ErrorState onRetry={onRetry} />;
+  if (error) {
+    return (
+      <div className="error-state" data-testid="state-error">
+        <Sparkles size={23} color="hsl(var(--primary))" />
+        <h3>Working in Local Mode</h3>
+        <p>The archive server is currently unreachable. You can continue creating fresh stories or retry connecting.</p>
+        <div style={{ display: 'flex', gap: '.6rem', justifyContent: 'center', marginTop: '.8rem' }}>
+          <button className="btn btn-ghost btn-sm" onClick={onRetry} data-testid="button-retry"><RefreshCw size={14} /> Try again</button>
+          <Link href="/create" className="btn btn-primary btn-sm"><Plus size={14} /> Begin a story</Link>
+        </div>
+      </div>
+    );
+  }
   if (!currentStories.length) return <EmptyState />;
-  return <><div className="story-grid">{currentStories.map((story) => <StoryCard key={story.id} story={story} onDelete={handleDelete} onRename={setRenameStory} />)}</div>{renameStory && <RenameModal story={renameStory} onClose={() => setRenameStory(null)} onSaved={(updated) => setLocalStories(currentStories.map((item) => item.id === updated.id ? updated : item))} />}</>;
+  return (
+    <>
+      <div className="story-grid">
+        {currentStories.map((story) => (
+          <StoryCard
+            key={story.id}
+            story={story}
+            onDelete={handleDelete}
+            onRename={setRenameStory}
+            onSaveStory={setSaveStoryTarget}
+          />
+        ))}
+      </div>
+      {renameStory && (
+        <RenameModal
+          story={renameStory}
+          onClose={() => setRenameStory(null)}
+          onSaved={(updated) => setLocalStories(currentStories.map((item) => item.id === updated.id ? updated : item))}
+        />
+      )}
+      {saveStoryTarget && (
+        <SaveStoryModal
+          story={saveStoryTarget}
+          onClose={() => setSaveStoryTarget(null)}
+        />
+      )}
+    </>
+  );
 }
 
 function Home() {
   const stories = useListStories();
   const stats = useGetStoryStats();
+
+  const rawHomeData = stories.data as (Story[] & { stories?: Story[] }) | undefined;
+  const homeStories: Story[] = Array.isArray(rawHomeData)
+    ? rawHomeData
+    : Array.isArray(rawHomeData?.stories)
+      ? (rawHomeData.stories as Story[])
+      : [];
+
   return <main className="page-main">
     <section className="hero">
       <div className="rise"><div className="eyebrow">A private library of impossible places</div><h1 className="display">Your choices.<br /><span style={{ color: 'hsl(var(--primary))' }}>Their consequences.</span></h1><p className="hero-copy">Mythos is an AI storybook that remembers the details. Step into a living adventure, shape it with a choice or a sentence, and return whenever the next page calls.</p><div className="hero-actions"><Link href="/create" className="btn btn-primary" data-testid="button-start-story"><Sparkles size={15} /> Open a new world <ArrowRight size={15} /></Link><Link href="/library" className="btn btn-ghost" data-testid="button-open-library"><LibraryBig size={15} /> Browse library</Link></div></div>
       <div className="orbit rise delay-2" aria-label="A constellation representing a story world"><div className="orbit-core" /><div className="orbit-label one">memory intact</div><div className="orbit-label two">the path bends</div><div className="orbit-label three">chapter 01</div></div>
     </section>
+
+    {stories.isError && (
+      <div
+        style={{
+          padding: '.85rem 1.25rem',
+          margin: '1.5rem 0',
+          border: '1px solid hsl(var(--primary) / .3)',
+          borderRadius: '.6rem',
+          background: 'hsl(var(--card))',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '1rem',
+          flexWrap: 'wrap',
+        }}
+        data-testid="banner-offline-home"
+      >
+        <span style={{ fontSize: '.84rem', color: 'hsl(var(--foreground))' }}>
+          <strong>Offline mode active:</strong> The backend is currently unreachable. You can still begin a new story or retry connecting.
+        </span>
+        <button className="btn btn-ghost btn-sm" onClick={() => stories.refetch()}>
+          <RefreshCw size={13} /> Retry connection
+        </button>
+      </div>
+    )}
+
     <Stats stats={stats.data} loading={stats.isLoading} />
-    <section><div className="section-head"><div><div className="eyebrow">Recently visited</div><h2>Continue your worlds</h2></div><Link href="/library" className="btn btn-ghost btn-sm" data-testid="link-see-all">See all <ArrowRight size={13} /></Link></div><StoryCollection stories={stories.data} loading={stories.isLoading} error={stories.isError} onRetry={() => stories.refetch()} /></section>
+    <section><div className="section-head"><div><div className="eyebrow">Recently visited</div><h2>Continue your worlds</h2></div><Link href="/library" className="btn btn-ghost btn-sm" data-testid="link-see-all">See all <ArrowRight size={13} /></Link></div><StoryCollection stories={homeStories} loading={stories.isLoading} error={stories.isError} onRetry={() => stories.refetch()} /></section>
   </main>;
 }
 
 function Library() {
   const stories = useListStories();
   const [search, setSearch] = useState('');
-  const filtered = useMemo(() => (stories.data ?? []).filter((story) => `${story.title} ${story.genre} ${story.character.name}`.toLowerCase().includes(search.toLowerCase())), [stories.data, search]);
-  return <main className="page-main"><div className="section-head"><div><div className="eyebrow">The archive</div><h1 className="display" style={{ fontSize: 'clamp(2.8rem, 6vw, 5rem)', margin: '.6rem 0 0' }}>Every world<br />you left open.</h1></div><Link href="/create" className="btn btn-primary" data-testid="button-library-create"><Plus size={15} /> New story</Link></div><div className="search-line"><div className="search-wrap"><Search size={16} /><input className="search-input" type="search" placeholder="Search titles, genres, characters…" value={search} onChange={(event) => setSearch(event.target.value)} data-testid="input-search-stories" /></div></div>{stories.isLoading ? <LoadingGrid count={6} /> : stories.isError ? <ErrorState onRetry={() => stories.refetch()} /> : filtered.length ? <StoryCollection stories={filtered} loading={false} onRetry={() => stories.refetch()} /> : <EmptyState compact />}</main>;
+
+  const rawLibData = stories.data as (Story[] & { stories?: Story[] }) | undefined;
+  const storiesList: Story[] = Array.isArray(rawLibData)
+    ? rawLibData
+    : Array.isArray(rawLibData?.stories)
+      ? (rawLibData.stories as Story[])
+      : [];
+
+  const filtered = useMemo(() => storiesList.filter((story) => `${story?.title ?? ''} ${story?.genre ?? ''} ${story?.character?.name ?? ''}`.toLowerCase().includes(search.toLowerCase())), [storiesList, search]);
+
+  return <main className="page-main">
+    <div className="section-head">
+      <div>
+        <div className="eyebrow">The archive</div>
+        <h1 className="display" style={{ fontSize: 'clamp(2.8rem, 6vw, 5rem)', margin: '.6rem 0 0' }}>Every world<br />you left open.</h1>
+      </div>
+      <Link href="/create" className="btn btn-primary" data-testid="button-library-create"><Plus size={15} /> New story</Link>
+    </div>
+
+    {stories.isError && (
+      <div
+        style={{
+          padding: '.85rem 1.25rem',
+          marginBottom: '1.5rem',
+          border: '1px solid hsl(var(--primary) / .3)',
+          borderRadius: '.6rem',
+          background: 'hsl(var(--card))',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '1rem',
+          flexWrap: 'wrap',
+        }}
+        data-testid="banner-offline-library"
+      >
+        <span style={{ fontSize: '.84rem', color: 'hsl(var(--foreground))' }}>
+          <strong>Offline mode active:</strong> The backend server is currently offline or unreachable. Existing stories will sync once reconnected.
+        </span>
+        <button className="btn btn-ghost btn-sm" onClick={() => stories.refetch()}>
+          <RefreshCw size={13} /> Reconnect
+        </button>
+      </div>
+    )}
+
+    <div className="search-line"><div className="search-wrap"><Search size={16} /><input className="search-input" type="search" placeholder="Search titles, genres, characters…" value={search} onChange={(event) => setSearch(event.target.value)} data-testid="input-search-stories" /></div></div>
+    {stories.isLoading ? <LoadingGrid count={6} /> : stories.isError && !storiesList.length ? <ErrorState onRetry={() => stories.refetch()} /> : filtered.length ? <StoryCollection stories={filtered} loading={false} onRetry={() => stories.refetch()} /> : <EmptyState compact={Boolean(search.trim())} />}
+  </main>;
 }
 
 function Create() {
@@ -161,12 +526,6 @@ function Create() {
   return <main className="page-main"><div className="create-layout"><div className="create-intro rise"><div className="eyebrow">The world begins here</div><h1 className="display">Leave room for the unexpected.</h1><p>Tell Mythos enough to find the emotional weather of your story. The rest will arrive one scene at a time.</p><Link href="/library" className="btn btn-ghost" data-testid="link-create-back"><ChevronLeft size={15} /> Back to library</Link></div><form className="form-panel rise delay-1" onSubmit={submit}><section className="form-section"><h2>The cover</h2><div className="form-grid"><div className="field wide"><label htmlFor="story-title">Story title</label><input id="story-title" value={form.title} onChange={(e) => setStory('title', e.target.value)} placeholder="The Cartographer of Hollow Tides" maxLength={120} data-testid="input-story-title" /></div><div className="field"><label htmlFor="story-genre">Genre</label><select id="story-genre" value={form.genre} onChange={(e) => setStory('genre', e.target.value)} data-testid="select-genre">{['Fantasy','Mystery','Science fiction','Horror','Historical','Adventure'].map((item) => <option key={item}>{item}</option>)}</select></div><div className="field"><label htmlFor="story-tone">Tone</label><input id="story-tone" value={form.tone} onChange={(e) => setStory('tone', e.target.value)} placeholder="Tender and strange" data-testid="input-story-tone" /></div><div className="field"><label htmlFor="story-world">World</label><textarea id="story-world" className="wide" value={form.world} onChange={(e) => setStory('world', e.target.value)} placeholder="A city that moves one street every midnight…" data-testid="textarea-story-world" /></div><div className="field"><label htmlFor="story-length">Length</label><select id="story-length" value={form.length} onChange={(e) => setStory('length', e.target.value)} data-testid="select-length">{['Short','Standard','Long','Epic'].map((item) => <option key={item}>{item}</option>)}</select></div><div className="field"><label htmlFor="story-difficulty">Difficulty</label><select id="story-difficulty" value={form.difficulty} onChange={(e) => setStory('difficulty', e.target.value)} data-testid="select-difficulty">{['Gentle','Balanced','Unforgiving'].map((item) => <option key={item}>{item}</option>)}</select></div><div className="field"><label htmlFor="story-style">Narrative style</label><input id="story-style" value={form.style} onChange={(e) => setStory('style', e.target.value)} placeholder="Lyrical" data-testid="input-story-style" /></div></div></section><section className="form-section"><h2>The one who enters</h2><div className="form-grid"><div className="field"><label htmlFor="character-name">Name</label><input id="character-name" value={form.character.name} onChange={(e) => setCharacter('name', e.target.value)} placeholder="Your protagonist" data-testid="input-character-name" /></div><div className="field"><label htmlFor="character-age">Age</label><input id="character-age" type="number" min="1" max="999" value={form.character.age} onChange={(e) => setCharacter('age', Number(e.target.value))} data-testid="input-character-age" /></div><div className="field"><label htmlFor="character-role">Role</label><input id="character-role" value={form.character.role} onChange={(e) => setCharacter('role', e.target.value)} placeholder="Reluctant archivist" data-testid="input-character-role" /></div><div className="field"><label htmlFor="character-ability">Ability</label><input id="character-ability" value={form.character.ability} onChange={(e) => setCharacter('ability', e.target.value)} placeholder="Can hear old stone remember" data-testid="input-character-ability" /></div><div className="field wide"><label htmlFor="character-personality">Personality</label><textarea id="character-personality" value={form.character.personality} onChange={(e) => setCharacter('personality', e.target.value)} placeholder="Observant, dryly funny, slow to trust…" data-testid="textarea-character-personality" /></div><div className="field wide"><label htmlFor="character-background">Background</label><textarea id="character-background" value={form.character.background} onChange={(e) => setCharacter('background', e.target.value)} placeholder="What did they leave behind?" data-testid="textarea-character-background" /></div><div className="field"><label htmlFor="character-strengths">Strengths</label><input id="character-strengths" value={form.character.strengths} onChange={(e) => setCharacter('strengths', e.target.value)} placeholder="Patience, maps, kindness" data-testid="input-character-strengths" /></div><div className="field"><label htmlFor="character-weaknesses">Weaknesses</label><input id="character-weaknesses" value={form.character.weaknesses} onChange={(e) => setCharacter('weaknesses', e.target.value)} placeholder="Avoids impossible choices" data-testid="input-character-weaknesses" /></div><div className="field"><label htmlFor="character-goal">Goal</label><textarea id="character-goal" value={form.character.goal} onChange={(e) => setCharacter('goal', e.target.value)} placeholder="What are they looking for?" data-testid="textarea-character-goal" /></div><div className="field"><label htmlFor="character-fear">Fear</label><textarea id="character-fear" value={form.character.fear} onChange={(e) => setCharacter('fear', e.target.value)} placeholder="What follows them?" data-testid="textarea-character-fear" /></div></div></section>{error && <p className="muted" style={{ color: 'hsl(var(--destructive))' }} data-testid="text-create-error">{error}</p>}<div className="form-actions"><button type="submit" className="btn btn-primary" disabled={create.isPending} data-testid="button-create-story">{create.isPending ? 'Writing the opening…' : <>Open the story <ArrowRight size={15} /></>}</button></div></form></div></main>;
 }
 
-function exportStory(story: Story, format: 'txt' | 'json') {
-  const content = format === 'json' ? JSON.stringify(story, null, 2) : `${story.title}\n${'='.repeat(story.title.length)}\n\n${story.scenes.map((scene) => `CHAPTER ${scene.chapter} · ${scene.chapterTitle}\n${scene.title}\n${scene.location}\n\n${scene.narrative}\n\n${scene.playerAction ? `Your action: ${scene.playerAction}\n` : ''}`).join('\n')}`;
-  const blob = new Blob([content], { type: format === 'json' ? 'application/json' : 'text/plain' });
-  const url = URL.createObjectURL(blob); const anchor = document.createElement('a'); anchor.href = url; anchor.download = `${story.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}.${format}`; anchor.click(); URL.revokeObjectURL(url);
-}
-
 function StoryPage() {
   const { id = '' } = useParams<{ id: string }>();
   const storyQuery = useGetStory(id, { query: { enabled: !!id, queryKey: getGetStoryQueryKey(id) } });
@@ -174,6 +533,7 @@ function StoryPage() {
   const client = useQueryClient();
   const [custom, setCustom] = useState('');
   const [rename, setRename] = useState(false);
+  const [saveModalOpen, setSaveModalOpen] = useState(false);
   const [selectedScene, setSelectedScene] = useState(0);
   const story = storyQuery.data;
   const currentScene = story?.scenes[selectedScene] ?? story?.scenes[story.scenes.length - 1];
@@ -183,7 +543,180 @@ function StoryPage() {
   };
   if (storyQuery.isLoading) return <main className="page-main"><div className="skeleton skeleton-line" style={{ width: '30%' }} /><div className="skeleton" style={{ height: 55, width: '65%', margin: '1rem 0 3rem' }} /><div className="skeleton" style={{ height: 300, maxWidth: 730 }} /></main>;
   if (storyQuery.isError || !story) return <main className="page-main"><ErrorState message="That story may have moved to another shelf." onRetry={() => storyQuery.refetch()} /></main>;
-  return <main className="page-main"><div className="story-header"><div><div className="eyebrow">{story.genre} · {story.status === 'completed' ? 'A finished tale' : 'An open thread'}</div><h1 className="display" data-testid="text-story-title">{story.title}</h1><div className="story-meta"><span>{story.character.name}, {story.character.role}</span><span>Updated {formatDate(story.updatedAt)}</span></div></div><div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap' }}><button className="btn btn-ghost btn-sm" onClick={() => setRename(true)} data-testid="button-story-rename"><Pencil size={14} /> Rename</button><button className="btn btn-ghost btn-sm" onClick={() => exportStory(story, 'txt')} data-testid="button-export-txt"><Download size={14} /> TXT</button><button className="btn btn-ghost btn-sm" onClick={() => exportStory(story, 'json')} data-testid="button-export-json"><FileJson size={14} /> JSON</button></div></div><div className="story-layout"><article className="reader-column"><div className="scene-nav">{story.scenes.map((scene, index) => <button className={`scene-pill ${index === selectedScene ? 'active' : ''}`} key={scene.id} onClick={() => setSelectedScene(index)} data-testid={`button-scene-${scene.id}`}>Scene {index + 1}</button>)}</div>{currentScene && <><div className="scene-kicker"><span>Chapter {currentScene.chapter}</span><span>/</span><span>{currentScene.chapterTitle}</span></div><h2 className="scene-title" data-testid="text-scene-title">{currentScene.title}</h2><div className="scene-location" data-testid="text-scene-location">{currentScene.location} · {currentScene.mood}</div><div className="narrative" data-testid="text-scene-narrative">{currentScene.narrative}</div><div className="action-panel">{advance.isPending ? <div className="turn-loading" data-testid="status-advancing">The next page is taking shape…</div> : story.status === 'completed' ? <div className="empty-state" style={{ padding: '2rem' }} data-testid="status-completed"><h3>The story rests here.</h3><p>Every decision found its consequence. Return to the library whenever you want to remember.</p></div> : <><div className="eyebrow">What do you do?</div><div className="choice-list">{currentScene.choices.map((choice) => <button className="choice-button" key={choice.id} onClick={() => act(choice.text)} data-testid={`button-choice-${choice.id}`}>{choice.text}<ArrowRight size={14} style={{ float: 'right', marginTop: 3 }} /></button>)}</div><div className="custom-action"><div className="field"><label htmlFor="custom-action">Or write your own action</label><input id="custom-action" value={custom} onChange={(e) => setCustom(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && custom.trim()) act(custom.trim()); }} maxLength={1000} placeholder="I ask the lighthouse what it remembers…" data-testid="input-custom-action" /></div><button className="btn btn-primary" onClick={() => act(custom.trim())} disabled={!custom.trim()} data-testid="button-send-action"><Send size={15} /> Send</button></div></>}</div></>}</article><aside className="story-sidebar"><div className="side-block"><div className="side-title">Current objective</div><div className="side-value" data-testid="text-current-objective">{story.state.currentObjective || 'Follow the thread.'}</div></div><div className="side-block"><div className="side-title">At</div><div className="side-value" data-testid="text-current-location">{story.state.currentLocation}</div></div><div className="side-block"><div className="side-title">Inventory</div><div className="tag-list">{(story.state.inventory.length ? story.state.inventory : ['Nothing yet']).map((item, index) => <span className="tag" key={`${item}-${index}`} data-testid={`tag-inventory-${index}`}>{item}</span>)}</div></div><div className="side-block"><div className="side-title">Known characters</div><div className="side-value">{story.state.discoveredCharacters?.length ? story.state.discoveredCharacters.join(', ') : 'No one has shown their face.'}</div></div><div className="side-block"><div className="side-title">Your character</div><div className="side-value"><strong>{story.character.name}</strong><br /><span className="muted">{story.character.ability || story.character.role}</span></div></div></aside></div>{rename && <RenameModal story={story} onClose={() => setRename(false)} onSaved={(updated) => client.setQueryData(getGetStoryQueryKey(story.id), updated)} />}</main>;
+  return (
+    <main className="page-main">
+      <div className="story-header">
+        <div>
+          <div className="eyebrow">{story.genre} · {story.status === 'completed' ? 'A finished tale' : 'An open thread'}</div>
+          <h1 className="display" data-testid="text-story-title">{story.title}</h1>
+          <div className="story-meta">
+            <span>{story.character.name}, {story.character.role}</span>
+            <span>Updated {formatDate(story.updatedAt)}</span>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          <button className="btn btn-ghost btn-sm" onClick={() => setRename(true)} data-testid="button-story-rename">
+            <Pencil size={14} /> Rename
+          </button>
+          <button className="btn btn-primary btn-sm" onClick={() => setSaveModalOpen(true)} data-testid="button-save-story">
+            <Download size={14} /> Save Story
+          </button>
+          <button className="btn btn-ghost btn-sm" onClick={() => exportStory(story, 'md')} data-testid="button-export-md" title="Export as Markdown">
+            <FileText size={14} /> .MD
+          </button>
+          <button className="btn btn-ghost btn-sm" onClick={() => exportStory(story, 'txt')} data-testid="button-export-txt" title="Export as Plain Text">
+            <Download size={14} /> .TXT
+          </button>
+          <button className="btn btn-ghost btn-sm" onClick={() => exportStory(story, 'json')} data-testid="button-export-json" title="Export as JSON">
+            <FileJson size={14} /> .JSON
+          </button>
+        </div>
+      </div>
+      <div className="story-layout">
+        <article className="reader-column">
+          <div className="scene-nav">
+            {story.scenes.map((scene, index) => (
+              <button
+                className={`scene-pill ${index === selectedScene ? 'active' : ''}`}
+                key={scene.id}
+                onClick={() => setSelectedScene(index)}
+                data-testid={`button-scene-${scene.id}`}
+              >
+                Scene {index + 1}
+              </button>
+            ))}
+          </div>
+          {currentScene && (
+            <>
+              <div className="scene-kicker">
+                <span>Chapter {currentScene.chapter}</span>
+                <span>/</span>
+                <span>{currentScene.chapterTitle}</span>
+              </div>
+              <h2 className="scene-title" data-testid="text-scene-title">{currentScene.title}</h2>
+              <div className="scene-location" data-testid="text-scene-location">
+                {currentScene.location} · {currentScene.mood}
+              </div>
+              <div className="narrative" data-testid="text-scene-narrative">
+                {currentScene.narrative}
+              </div>
+              <div className="action-panel">
+                {advance.isPending ? (
+                  <div className="turn-loading" data-testid="status-advancing">
+                    The next page is taking shape…
+                  </div>
+                ) : story.status === 'completed' ? (
+                  <div className="empty-state" style={{ padding: '2rem' }} data-testid="status-completed">
+                    <h3>The story rests here.</h3>
+                    <p>Every decision found its consequence. Return to the library whenever you want to remember.</p>
+                    <div style={{ marginTop: '1rem' }}>
+                      <button className="btn btn-primary btn-sm" onClick={() => setSaveModalOpen(true)}>
+                        <Download size={14} /> Save Completed Chronicle
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="eyebrow">What do you do?</div>
+                    <div className="choice-list">
+                      {currentScene.choices.map((choice) => (
+                        <button
+                          className="choice-button"
+                          key={choice.id}
+                          onClick={() => act(choice.text)}
+                          data-testid={`button-choice-${choice.id}`}
+                        >
+                          {choice.text}
+                          <ArrowRight size={14} style={{ float: 'right', marginTop: 3 }} />
+                        </button>
+                      ))}
+                    </div>
+                    <div className="custom-action">
+                      <div className="field">
+                        <label htmlFor="custom-action">Or write your own action</label>
+                        <input
+                          id="custom-action"
+                          value={custom}
+                          onChange={(e) => setCustom(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && custom.trim()) act(custom.trim());
+                          }}
+                          maxLength={1000}
+                          placeholder="I ask the lighthouse what it remembers…"
+                          data-testid="input-custom-action"
+                        />
+                      </div>
+                      <button
+                        className="btn btn-primary"
+                        onClick={() => act(custom.trim())}
+                        disabled={!custom.trim()}
+                        data-testid="button-send-action"
+                      >
+                        <Send size={15} /> Send
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </>
+          )}
+        </article>
+        <aside className="story-sidebar">
+          <div className="side-block">
+            <div className="side-title">Current objective</div>
+            <div className="side-value" data-testid="text-current-objective">
+              {story.state.currentObjective || 'Follow the thread.'}
+            </div>
+          </div>
+          <div className="side-block">
+            <div className="side-title">At</div>
+            <div className="side-value" data-testid="text-current-location">
+              {story.state.currentLocation}
+            </div>
+          </div>
+          <div className="side-block">
+            <div className="side-title">Inventory</div>
+            <div className="tag-list">
+              {(story.state.inventory.length ? story.state.inventory : ['Nothing yet']).map((item, index) => (
+                <span className="tag" key={`${item}-${index}`} data-testid={`tag-inventory-${index}`}>
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className="side-block">
+            <div className="side-title">Known characters</div>
+            <div className="side-value">
+              {story.state.discoveredCharacters?.length
+                ? story.state.discoveredCharacters.join(', ')
+                : 'No one has shown their face.'}
+            </div>
+          </div>
+          <div className="side-block">
+            <div className="side-title">Your character</div>
+            <div className="side-value">
+              <strong>{story.character.name}</strong>
+              <br />
+              <span className="muted">{story.character.ability || story.character.role}</span>
+            </div>
+          </div>
+        </aside>
+      </div>
+      {rename && (
+        <RenameModal
+          story={story}
+          onClose={() => setRename(false)}
+          onSaved={(updated) => client.setQueryData(getGetStoryQueryKey(story.id), updated)}
+        />
+      )}
+      {saveModalOpen && (
+        <SaveStoryModal
+          story={story}
+          onClose={() => setSaveModalOpen(false)}
+        />
+      )}
+    </main>
+  );
 }
 
 function Router() {

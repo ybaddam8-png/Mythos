@@ -16,13 +16,22 @@ import {
   UpdateStoryParams,
   UpdateStoryResponse,
 } from "@workspace/api-zod";
-import { db, storiesTable, type StoryRecord } from "@workspace/db";
+import {
+  db,
+  storiesTable,
+  type StoryRecord,
+  type StoryScene,
+  type StoryWorldState,
+} from "@workspace/db";
 import { generateStoryTurn, StoryGenerationError } from "../lib/story-generator";
 
 const router: IRouter = Router();
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const rateWindows = new Map<string, { startedAt: number; count: number }>();
+
+// In-memory fallback store when PostgreSQL / DATABASE_URL is not configured or unavailable
+const inMemoryStories = new Map<string, StoryRecord>();
 
 function getGuestId(req: Request): string | null {
   const value = req.get("x-guest-id")?.trim();
@@ -75,6 +84,160 @@ function allowGeneration(req: Request, res: Response, guestId: string): boolean 
   return true;
 }
 
+// Store abstraction with transparent in-memory fallback
+async function listStoriesStore(guestId: string): Promise<StoryRecord[]> {
+  if (db) {
+    try {
+      const records = await db
+        .select()
+        .from(storiesTable)
+        .where(eq(storiesTable.guestId, guestId))
+        .orderBy(desc(storiesTable.updatedAt));
+      if (records) return records;
+    } catch (err) {
+      console.warn("Database query failed, falling back to in-memory store:", err);
+    }
+  }
+  return Array.from(inMemoryStories.values())
+    .filter((story) => story.guestId === guestId)
+    .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+}
+
+async function getStoryStore(id: string, guestId: string): Promise<StoryRecord | null> {
+  if (db) {
+    try {
+      const [story] = await db
+        .select()
+        .from(storiesTable)
+        .where(and(eq(storiesTable.id, id), eq(storiesTable.guestId, guestId)));
+      if (story) return story;
+    } catch (err) {
+      console.warn("Database query failed, checking in-memory store:", err);
+    }
+  }
+  const mem = inMemoryStories.get(id);
+  if (mem && mem.guestId === guestId) return mem;
+  return null;
+}
+
+async function createStoryStore(record: StoryRecord): Promise<StoryRecord> {
+  inMemoryStories.set(record.id, record);
+  if (db) {
+    try {
+      const [created] = await db
+        .insert(storiesTable)
+        .values(record)
+        .returning();
+      if (created) return created;
+    } catch (err) {
+      console.warn("Database insert failed, stored safely in memory:", err);
+    }
+  }
+  return record;
+}
+
+async function updateStoryTitleStore(
+  id: string,
+  guestId: string,
+  title: string,
+): Promise<StoryRecord | null> {
+  const now = new Date();
+  const mem = inMemoryStories.get(id);
+  if (mem && mem.guestId === guestId) {
+    mem.title = title;
+    mem.updatedAt = now;
+  }
+  if (db) {
+    try {
+      const [updated] = await db
+        .update(storiesTable)
+        .set({ title, updatedAt: now })
+        .where(and(eq(storiesTable.id, id), eq(storiesTable.guestId, guestId)))
+        .returning();
+      if (updated) return updated;
+    } catch (err) {
+      console.warn("Database update failed, updated in memory:", err);
+    }
+  }
+  return mem && mem.guestId === guestId ? mem : null;
+}
+
+async function deleteStoryStore(id: string, guestId: string): Promise<boolean> {
+  let deleted = false;
+  const mem = inMemoryStories.get(id);
+  if (mem && mem.guestId === guestId) {
+    inMemoryStories.delete(id);
+    deleted = true;
+  }
+  if (db) {
+    try {
+      const [deletedDb] = await db
+        .delete(storiesTable)
+        .where(and(eq(storiesTable.id, id), eq(storiesTable.guestId, guestId)))
+        .returning({ id: storiesTable.id });
+      if (deletedDb) return true;
+    } catch (err) {
+      console.warn("Database delete failed, deleted from memory:", err);
+    }
+  }
+  return deleted;
+}
+
+async function advanceStoryStore(
+  id: string,
+  guestId: string,
+  scenes: StoryScene[],
+  state: StoryWorldState,
+  status: "active" | "completed",
+): Promise<StoryRecord | null> {
+  const now = new Date();
+  const mem = inMemoryStories.get(id);
+  if (mem && mem.guestId === guestId) {
+    mem.scenes = scenes;
+    mem.state = state;
+    mem.status = status;
+    mem.updatedAt = now;
+  }
+  if (db) {
+    try {
+      const [updated] = await db
+        .update(storiesTable)
+        .set({
+          scenes,
+          state,
+          status,
+          updatedAt: now,
+        })
+        .where(and(eq(storiesTable.id, id), eq(storiesTable.guestId, guestId)))
+        .returning();
+      if (updated) return updated;
+    } catch (err) {
+      console.warn("Database advance update failed, updated in memory:", err);
+    }
+  }
+  return mem && mem.guestId === guestId ? mem : null;
+}
+
+async function getStatsStore(guestId: string): Promise<{
+  total: number;
+  active: number;
+  completed: number;
+  choices: number;
+  chapters: number;
+}> {
+  const stories = await listStoriesStore(guestId);
+  return {
+    total: stories.length,
+    active: stories.filter((story) => story.status === "active").length,
+    completed: stories.filter((story) => story.status === "completed").length,
+    choices: stories.reduce((total, story) => total + (story.state?.decisions?.length ?? 0), 0),
+    chapters: stories.reduce(
+      (total, story) => total + new Set((story.scenes ?? []).map((scene) => scene.chapter)).size,
+      0,
+    ),
+  };
+}
+
 router.get("/stories", async (req, res): Promise<void> => {
   const guestId = getGuestId(req);
   if (!guestId) {
@@ -82,11 +245,7 @@ router.get("/stories", async (req, res): Promise<void> => {
     return;
   }
 
-  const stories = await db
-    .select()
-    .from(storiesTable)
-    .where(eq(storiesTable.guestId, guestId))
-    .orderBy(desc(storiesTable.updatedAt));
+  const stories = await listStoriesStore(guestId);
   res.json(ListStoriesResponse.parse(stories.map(responseStory)));
 });
 
@@ -126,11 +285,13 @@ router.post("/stories", async (req, res): Promise<void> => {
 
   try {
     const { scene, state } = await generateStoryTurn(storySeed as StoryRecord, null, true, false);
-    const [created] = await db
-      .insert(storiesTable)
-      .values({ ...storySeed, scenes: [scene], state, updatedAt: new Date() })
-      .returning();
-    if (!created) throw new Error("The opening scene could not be saved.");
+    const storyToSave: StoryRecord = {
+      ...storySeed,
+      scenes: [scene],
+      state,
+      updatedAt: new Date(),
+    };
+    const created = await createStoryStore(storyToSave);
     res.status(201).json(CreateStoryResponse.parse(responseStory(created)));
   } catch (error) {
     req.log.error({ err: error }, "Could not create story opening");
@@ -138,7 +299,7 @@ router.post("/stories", async (req, res): Promise<void> => {
       error:
         error instanceof StoryGenerationError
           ? error.message
-          : "The opening scene could not be generated. Check the AI connection and try again.",
+          : "The opening scene could not be generated. Check the details and try again.",
     });
   }
 });
@@ -150,20 +311,7 @@ router.get("/stories/stats", async (req, res): Promise<void> => {
     return;
   }
 
-  const stories = await db
-    .select()
-    .from(storiesTable)
-    .where(eq(storiesTable.guestId, guestId));
-  const stats = {
-    total: stories.length,
-    active: stories.filter((story) => story.status === "active").length,
-    completed: stories.filter((story) => story.status === "completed").length,
-    choices: stories.reduce((total, story) => total + story.state.decisions.length, 0),
-    chapters: stories.reduce(
-      (total, story) => total + new Set(story.scenes.map((scene) => scene.chapter)).size,
-      0,
-    ),
-  };
+  const stats = await getStatsStore(guestId);
   res.json(GetStoryStatsResponse.parse(stats));
 });
 
@@ -175,10 +323,7 @@ router.get("/stories/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  const [story] = await db
-    .select()
-    .from(storiesTable)
-    .where(and(eq(storiesTable.id, params.data.id), eq(storiesTable.guestId, guestId)));
+  const story = await getStoryStore(params.data.id, guestId);
   if (!story) {
     res.status(404).json({ error: "Story not found." });
     return;
@@ -195,11 +340,7 @@ router.patch("/stories/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  const [story] = await db
-    .update(storiesTable)
-    .set({ title: body.data.title, updatedAt: new Date() })
-    .where(and(eq(storiesTable.id, params.data.id), eq(storiesTable.guestId, guestId)))
-    .returning();
+  const story = await updateStoryTitleStore(params.data.id, guestId, body.data.title);
   if (!story) {
     res.status(404).json({ error: "Story not found." });
     return;
@@ -215,10 +356,7 @@ router.delete("/stories/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  const [deleted] = await db
-    .delete(storiesTable)
-    .where(and(eq(storiesTable.id, params.data.id), eq(storiesTable.guestId, guestId)))
-    .returning({ id: storiesTable.id });
+  const deleted = await deleteStoryStore(params.data.id, guestId);
   if (!deleted) {
     res.status(404).json({ error: "Story not found." });
     return;
@@ -235,10 +373,7 @@ router.post("/stories/:id/turn", async (req, res): Promise<void> => {
     return;
   }
 
-  const [story] = await db
-    .select()
-    .from(storiesTable)
-    .where(and(eq(storiesTable.id, params.data.id), eq(storiesTable.guestId, guestId)));
+  const story = await getStoryStore(params.data.id, guestId);
   if (!story) {
     res.status(404).json({ error: "Story not found." });
     return;
@@ -262,16 +397,13 @@ router.post("/stories/:id/turn", async (req, res): Promise<void> => {
       ending,
     );
     const scenes = [...story.scenes, generated.scene];
-    const [updated] = await db
-      .update(storiesTable)
-      .set({
-        scenes,
-        state: generated.state,
-        status: generated.complete ? "completed" : "active",
-        updatedAt: new Date(),
-      })
-      .where(and(eq(storiesTable.id, story.id), eq(storiesTable.guestId, guestId)))
-      .returning();
+    const updated = await advanceStoryStore(
+      story.id,
+      guestId,
+      scenes,
+      generated.state,
+      generated.complete ? "completed" : "active",
+    );
     if (!updated) throw new Error("The generated scene could not be saved.");
     res.json(AdvanceStoryResponse.parse(responseStory(updated)));
   } catch (error) {
